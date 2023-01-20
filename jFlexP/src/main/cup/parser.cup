@@ -1,0 +1,98 @@
+package jflexp.generated_sources;
+import java_cup.runtime.*;
+import jflexp.Parse;
+import jflexp.generated_sources.lexer;
+
+action code {:
+    boolean fedrat = false;
+    String nFed;
+    
+
+    /*
+    *Metodo per il parsing GOTO / X, Y , Z
+    *@return: String
+    */
+    private String GOTO(String x, String z) {
+        if(fedrat){
+            fedrat = false;
+            return "N" + lexer.getM() + " G1 X" + x + " Z" + z + " F" + nFed;
+        } else{
+            return "N" + lexer.getM() + " G0 X" + x + " Z" + z;
+        }
+    }
+
+    /*
+    *Metodo per il parsing TOOLNO
+    *@return: String
+    */
+    private String TOOLNO(String n) {
+        return "N" + lexer.getM() + " T" + n + " M8 G40";
+    }
+
+    /*
+    *Metodo per il parsing TOOLNO
+    *@return: String
+    */
+    private String FEDRAT(String n) {
+        fedrat = true;
+        nFed = n;
+        return null;
+    }
+
+    private String SPINDL(String n) {
+        if (fedrat) {
+            fedrat = false;
+            return "N" + lexer.getM() + " G97 S" + n + " G95 F" + nFed + " M4";
+        } else {
+            return "N" + lexer.getM() + " G97 S" + n;
+        }
+    }
+    
+    /*
+    *Metodo per il parsing Circle
+    *@return: String
+    */
+    private String circle(String A1, String A3, String R, String PFX, String PFZ) {
+        if (Math.abs(Double.valueOf(A1)) > Math.abs(Double.valueOf(A3))) {
+            return "N" + lexer.getM() + " " + "G3 " + PFX + " " + PFZ + " " + R;
+        } else {
+            return "N" + lexer.getM() + " " + "G3 " + PFX + " " + PFZ + " " + R;
+        }
+    }
+
+:}
+
+/*		terminals		*/
+terminal GOTO, TOOLNO, SLASH, COMMA, SPINDL, FEDRAT, INDIRV, TLON, GOFWD, CIRCLE, LINE, ON, LPAREN, RPAREN, COOLNT, CUTCOM, CUTTER, LOADTL, SWITCH, RAPID, REWIND, INTOL, OUTTOL, OFF, TURN, MMPR;
+terminal String NUMBER;
+
+/*		non terminals		*/
+
+non terminal cmd_list, cmd;
+
+/*		Grammar rules		*/
+
+cmd_list ::= cmd_list cmd:e {:Parse.println(e); lexer.nextM();:} | cmd:e{:lexer.nextM();:} 
+;
+
+cmd ::= GOTO SLASH NUMBER:x COMMA NUMBER COMMA NUMBER:z {: RESULT = GOTO(x, z); :}
+        |TOOLNO SLASH NUMBER:n COMMA TURN  {: RESULT = TOOLNO(n); :}
+        |SPINDL SLASH NUMBER:n  {: RESULT = SPINDL(n); :}
+        |FEDRAT SLASH NUMBER:n COMMA MMPR {: RESULT = FEDRAT(n);lexer.decM(); :}
+        |INDIRV SLASH NUMBER:A1 COMMA NUMBER:A2 COMMA NUMBER:A3
+         TLON COMMA GOFWD SLASH LPAREN CIRCLE SLASH NUMBER:CX COMMA NUMBER:CY COMMA NUMBER:CZ COMMA
+         NUMBER:R RPAREN COMMA ON COMMA LPAREN LINE SLASH NUMBER:X COMMA NUMBER:Y COMMA NUMBER:Z COMMA
+         NUMBER:PFX COMMA NUMBER:PFY COMMA NUMBER:PFZ RPAREN {: RESULT = circle(A1, A3, R, PFX, PFZ); :}
+         
+         /*COMMANDS NOT DEFINED*/
+         
+        |COOLNT SLASH ON {: RESULT = null;lexer.decM(); :}
+        |CUTCOM SLASH ON {: RESULT = null;lexer.decM(); :} 
+        |CUTCOM SLASH OFF {: RESULT = null;lexer.decM(); :}
+        |CUTTER SLASH NUMBER {: RESULT = null;lexer.decM(); :}
+        |LOADTL SLASH NUMBER {: RESULT = null;lexer.decM(); :}
+        |SWITCH SLASH NUMBER {: RESULT = null;lexer.decM(); :}
+        |REWIND SLASH NUMBER {: RESULT = null;lexer.decM(); :}
+        |INTOL  SLASH NUMBER {: RESULT = null;lexer.decM(); :}
+        |OUTTOL SLASH NUMBER {: RESULT = null;lexer.decM(); :}
+;
